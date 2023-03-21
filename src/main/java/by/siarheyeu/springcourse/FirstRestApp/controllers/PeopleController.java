@@ -3,6 +3,7 @@ package by.siarheyeu.springcourse.FirstRestApp.controllers;
 import by.siarheyeu.springcourse.FirstRestApp.models.Person;
 import by.siarheyeu.springcourse.FirstRestApp.services.PeopleService;
 import by.siarheyeu.springcourse.FirstRestApp.util.PersonErrorResponse;
+import by.siarheyeu.springcourse.FirstRestApp.util.PersonNotCreatedException;
 import by.siarheyeu.springcourse.FirstRestApp.util.PersonNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -46,6 +47,8 @@ public class PeopleController {
                         .append(" - ").append(error.getDefaultMessage())
                         .append(";");
             }
+
+            throw new PersonNotCreatedException(errorMsg.toString());
         }
         peopleService.save(person);
 
@@ -60,5 +63,15 @@ public class PeopleController {
         );
 
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<PersonErrorResponse> handleException(PersonNotCreatedException e){
+        PersonErrorResponse response = new PersonErrorResponse(
+                e.getMessage(),
+                System.currentTimeMillis()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }
