@@ -1,5 +1,6 @@
 package by.siarheyeu.springcourse.FirstRestApp.controllers;
 
+import by.siarheyeu.springcourse.FirstRestApp.dto.PersonDTO;
 import by.siarheyeu.springcourse.FirstRestApp.models.Person;
 import by.siarheyeu.springcourse.FirstRestApp.services.PeopleService;
 import by.siarheyeu.springcourse.FirstRestApp.util.PersonErrorResponse;
@@ -12,6 +13,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -36,7 +38,7 @@ public class PeopleController {
     }
 
     @PostMapping
-    public ResponseEntity<HttpStatus> create(@RequestBody @Valid Person person,
+    public ResponseEntity<HttpStatus> create(@RequestBody @Valid PersonDTO personDTO,
                                              BindingResult bindingResult) {
         if (bindingResult.hasErrors()){
             StringBuilder errorMsg = new StringBuilder();
@@ -50,10 +52,11 @@ public class PeopleController {
 
             throw new PersonNotCreatedException(errorMsg.toString());
         }
-        peopleService.save(person);
+        peopleService.save(convertToPerson(personDTO));
 
         return ResponseEntity.ok(HttpStatus.OK);
     }
+
 
     @ExceptionHandler
     private ResponseEntity<PersonErrorResponse> handleException(PersonNotFoundException e){
@@ -73,5 +76,23 @@ public class PeopleController {
         );
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+    private Person convertToPerson(PersonDTO personDTO) {
+        Person person = new Person();
+
+        person.setName(personDTO.getName());
+        person.setAge(personDTO.getAge());
+        person.setEmail(personDTO.getEmail());
+
+        enrichPerson(person);
+
+        return person;
+    }
+
+    private void enrichPerson(Person person) {
+        person.setCreatedAt(LocalDateTime.now());
+        person.setUpdatedAt(LocalDateTime.now());
+        person.setCreatedWho("ADMIN");
+
     }
 }
