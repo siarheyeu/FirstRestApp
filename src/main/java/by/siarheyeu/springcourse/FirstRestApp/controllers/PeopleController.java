@@ -7,6 +7,8 @@ import by.siarheyeu.springcourse.FirstRestApp.util.PersonErrorResponse;
 import by.siarheyeu.springcourse.FirstRestApp.util.PersonNotCreatedException;
 import by.siarheyeu.springcourse.FirstRestApp.util.PersonNotFoundException;
 import jakarta.validation.Valid;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -21,20 +23,23 @@ import java.util.List;
 public class PeopleController {
 
     private final PeopleService peopleService;
+    private final ModelMapper modelMapper;
 
-
-    public PeopleController(PeopleService peopleService) {
+   @Autowired
+    public PeopleController(PeopleService peopleService, ModelMapper modelMapper) {
         this.peopleService = peopleService;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping()
     public List<Person> getPeople(){
-        return peopleService.findAll();
+        return peopleService.findAll().stream().map(this::convertToPersonDTO)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Person getPerson(@PathVariable("id") int id){
-        return peopleService.findOne(id);
+    public PersonDTO getPerson(@PathVariable("id") int id){
+        return convertToPersonDTO(peopleService.findOne(id));
     }
 
     @PostMapping
@@ -78,21 +83,10 @@ public class PeopleController {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
     private Person convertToPerson(PersonDTO personDTO) {
-        Person person = new Person();
-
-        person.setName(personDTO.getName());
-        person.setAge(personDTO.getAge());
-        person.setEmail(personDTO.getEmail());
-
-        enrichPerson(person);
-
-        return person;
+       return  modelMapper.map(personDTO, Person.class);
     }
 
-    private void enrichPerson(Person person) {
-        person.setCreatedAt(LocalDateTime.now());
-        person.setUpdatedAt(LocalDateTime.now());
-        person.setCreatedWho("ADMIN");
-
+    private PersonDTO convertToPerson(Person person){
+        return modelMapper.map(person, PersonDTO.class);
     }
 }
